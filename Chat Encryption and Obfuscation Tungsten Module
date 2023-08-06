@@ -1,0 +1,59 @@
+package org.tungsten.client.feature.module.modules;
+
+import net.minecraft.text.Text;
+import org.tungsten.client.Tungsten;
+import org.tungsten.client.feature.module.GenericModule;
+import org.tungsten.client.feature.module.config.CommandSetting;
+
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+
+public class MessageEncryptionModule extends GenericModule {
+
+    private final CommandSetting encryptCommand = new CommandSetting(".encrypt", this::onEncryptCommand);
+    private final int maxCharVal = 0xFFFF; // Unicode character limit
+
+    public MessageEncryptionModule() {
+        super("MessageEncryption", "Allows you to encrypt your messages using the '.encrypt' command.", "Chat");
+        this.registerSettings(encryptCommand);
+    }
+
+    @Override
+    protected void onEnable() {
+        System.out.println("Message Encryption Module Enabled.");
+    }
+
+    @Override
+    protected void onDisable() {
+        System.out.println("Message Encryption Module Disabled.");
+    }
+
+    @Override
+    protected void onClientTick() {
+        // Your tick logic here, if needed
+    }
+
+    private void onEncryptCommand(String command, String[] args) {
+        if (args.length > 0) {
+            String message = String.join(" ", args);
+            String encryptedMessage = encryptMessage(message);
+            Tungsten.client.player.sendMessage(Text.of("Encrypted Message: " + encryptedMessage));
+            copyToClipboard(encryptedMessage);
+        } else {
+            Tungsten.client.player.sendMessage(Text.of("Please provide a message to encrypt."));
+        }
+    }
+
+    private String encryptMessage(String message) {
+        StringBuilder encryptedMessage = new StringBuilder();
+        for (char c : message.toCharArray()) {
+            char encryptedChar = (char) (maxCharVal - c); // Complementary encryption
+            encryptedMessage.append(encryptedChar);
+        }
+        return encryptedMessage.toString();
+    }
+
+    private void copyToClipboard(String text) {
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+    }
+}

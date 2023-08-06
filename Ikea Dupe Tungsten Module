@@ -1,0 +1,69 @@
+package org.tungsten.client.feature.module.modules;
+
+import net.minecraft.item.Item;
+import net.minecraft.item.Items;
+import net.minecraft.screen.GenericContainerScreenHandler;
+import net.minecraft.screen.ScreenHandler;
+import net.minecraft.screen.slot.Slot;
+import org.tungsten.client.Tungsten;
+import org.tungsten.client.feature.module.GenericModule;
+import org.tungsten.client.feature.module.config.ButtonSetting;
+import org.tungsten.client.feature.module.config.ListSetting;
+import org.tungsten.client.utils.TimerUtils;
+
+import java.util.List;
+
+public class IKEADupe extends GenericModule {
+
+    private final TimerUtils timer = new TimerUtils();
+    private final ButtonSetting dupeButton = new ButtonSetting("DupeButton", "Dupe Button", this::onDupeButtonClick);
+    private final ListSetting<Item> shulkers = new ListSetting<>("Shulkers", "Shulkers to dupe.", Items.SHULKER_BOX);
+
+    public IKEADupe() {
+        super("IKEADupe", "Does the updated IKEA dupe.", "Misc");
+        this.registerSettings(dupeButton, shulkers);
+    }
+
+    @Override
+    protected void onEnable() {
+        timer.reset();
+    }
+
+    @Override
+    protected void onClientTick() {
+        if (Tungsten.client.player != null) {
+            ScreenHandler handler = Tungsten.client.player.currentScreenHandler;
+            if (handler instanceof GenericContainerScreenHandler container) {
+                chestDupe(container);
+            }
+        }
+    }
+
+    private void chestDupe(GenericContainerScreenHandler handler) {
+        int offset = SlotUtils.indexToId(SlotUtils.MAIN_START);
+        double delaySeconds = 0.5; // Default delay if not set in the config
+
+        if (timer.hasTimePassed(delaySeconds * 1000)) {
+            dupeItems(handler, 0, SlotUtils.indexToId(SlotUtils.MAIN_START));
+            dupeItems(handler, offset, offset + 4 * 9);
+            timer.reset();
+        }
+    }
+
+    private void dupeItems(GenericContainerScreenHandler handler, int start, int end) {
+        for (int i = start; i < end; i++) {
+            Slot slot = handler.getSlot(i);
+            if (Tungsten.client.currentScreen == null || !slot.hasStack()) {
+                continue;
+            }
+            if (shulkers.getValue().contains(slot.getStack().getItem())) {
+                InvUtils.quickMove().slotId(i);
+            }
+        }
+    }
+
+    private void onDupeButtonClick() {
+        // Implement the button logic here, if needed
+        Tungsten.client.player.sendMessage(Text.of("Dupe Button clicked!"));
+    }
+}
